@@ -1,4 +1,6 @@
 <?php
+//rout
+use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\UserController;
 use App\Http\Controllers\API\ParentController;
 use App\Http\Controllers\API\StudentController;
@@ -13,10 +15,13 @@ use App\Http\Controllers\API\NoticeController;
 use App\Http\Controllers\API\LibraryController;
 use App\Http\Controllers\API\MessageController;
 
+
 Route::prefix('users')->group(function () {
     Route::post('/login', [UserController::class, 'login']);
     Route::post('/reset_password', [UserController::class, 'resetPassword']);
     Route::get('/profile', [UserController::class, 'getProfile'])->middleware('auth:sanctum');
+    Route::post('/register', [UserController::class, 'register']);
+
 });
 
 Route::prefix('parents')->group(function () {
