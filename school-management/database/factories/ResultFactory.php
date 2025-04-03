@@ -3,21 +3,27 @@
 namespace Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
+use App\Models\Result;
+use App\Models\Student;
+use App\Models\Course;
 
-/**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Result>
- */
 class ResultFactory extends Factory
 {
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
-    public function definition(): array
+    protected $model = Result::class;
+
+    public function definition()
     {
         return [
-            //
+            'student_id' => Student::factory(),
+            'course_id' => Course::factory(),
+            'semester' => 'Spring 2024',
+            'activity_type' => $this->faker->randomElement(['Daily Activity', 'Quiz', 'Test']),
+            'title' => $this->faker->sentence,
+            'date' => $this->faker->date,
+            'score' => $this->faker->randomFloat(2, 50, 100),
+            'amount' => $this->faker->randomFloat(2, 0, 50),
+            'created_at' => now(),
+            'updated_at' => now(),
         ];
     }
 }
