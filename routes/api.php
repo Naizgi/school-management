@@ -26,9 +26,8 @@ Route::prefix('users')->group(function () {
 
 });
 
-// 🔴 Protected Routes (Require JWT authentication)
+// 🔴 Protected Routes (Require JWT authentication) keseran bewhala enastekakalewalen man lelawn mokrew yaredo
 
-    
     // User Routes
     Route::prefix('users')->group(function () {
         Route::post('/logout', [UserController::class, 'logout']);
