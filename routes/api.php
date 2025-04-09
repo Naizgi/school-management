@@ -23,19 +23,11 @@ Route::prefix('users')->group(function () {
     Route::post('/login', [UserController::class, 'login']);
     Route::post('/register', [UserController::class, 'register']);
     Route::post('/bulk-register', [UserController::class, 'bulkRegister']);
-    Route::post('/register-student', [ParentController::class, 'registerStudent']);
-    Route::get('/students', [ParentController::class, 'getStudents']);
-    Route::put('/students/{student_id}', [ParentController::class, 'updateStudentProfile']);
+ 
 
 
 
-    Route::get('/index', [ClassController::class, 'index']);
-    Route::post('/store', [ClassController::class, 'store']);
-    Route::get('/show/{id}', [ClassController::class, 'show']);
-    Route::put('/update/{id}', [ClassController::class, 'update']);
-    Route::delete('/destroy/{id}', [ClassController::class, 'destroy']);
-    Route::get('/{id}/statistics', [ClassController::class, 'statistics']);
-    Route::get('/{id}/students', [ClassController::class, 'students']);
+
 });
 
 // 🔴 Protected Routes (Require JWT authentication)
@@ -50,7 +42,9 @@ Route::prefix('users')->group(function () {
     // Parent Routes
     Route::prefix('parents')->group(function () {
       
- 
+        Route::post('/register-student', [ParentController::class, 'registerStudent']);
+        Route::get('/students', [ParentController::class, 'getStudents']);
+        Route::put('/students/{student_id}', [ParentController::class, 'updateStudentProfile']);
     });
 
     // Student Routes
@@ -59,7 +53,13 @@ Route::prefix('users')->group(function () {
     });
 
     Route::prefix('classes')->group(function () {
-    
+        Route::get('/index', [ClassController::class, 'index']);
+    Route::post('/store', [ClassController::class, 'store']);
+    Route::get('/show/{id}', [ClassController::class, 'show']);
+    Route::put('/update/{id}', [ClassController::class, 'update']);
+    Route::delete('/destroy/{id}', [ClassController::class, 'destroy']);
+    Route::get('/{id}/statistics', [ClassController::class, 'statistics']);
+    Route::get('/{id}/students', [ClassController::class, 'students']);
     });
 
     // Instructor Routes
