@@ -11,10 +11,7 @@ use Illuminate\Support\Facades\Gate;
 
 class AttendanceController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('auth:api');
-    }
+ 
 
     // ✅ MARK ATTENDANCE (Only authenticated users)
     public function markAttendance(Request $request)
@@ -23,13 +20,12 @@ class AttendanceController extends Controller
             'student_id' => 'required|exists:students,id',
             'date_of_absence' => 'required|date|before_or_equal:today', // Ensure date is not in future
             'reason' => 'required|string|max:255',
+            'status' => 'required|string|in:Present,Absent,Late',
         ]);
 
         try {
     
-            if (Gate::denies('mark-attendance')) {
-                return response()->json(['error' => 'Unauthorized access'], 403);
-            }
+          
 
         
             $existingAttendance = Attendance::where('student_id', $request->student_id)
@@ -44,6 +40,7 @@ class AttendanceController extends Controller
                 'student_id' => $request->student_id,
                 'date_of_absence' => $request->date_of_absence,
                 'reason' => $request->reason,
+                'status' => $request->status, // Include status
             ]);
 
             return response()->json(['message' => 'Attendance marked successfully.'], 201);
@@ -57,10 +54,7 @@ class AttendanceController extends Controller
     {
         try {
      
-            if (Gate::denies('view-attendance', $student_id)) {
-                return response()->json(['error' => 'Unauthorized access'], 403);
-            }
-
+      
             $attendance = Attendance::where('student_id', $student_id)->get();
 
             if ($attendance->isEmpty()) {
