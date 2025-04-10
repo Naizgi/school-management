@@ -74,6 +74,10 @@ Route::prefix('users')->group(function () {
    
             Route::post('/add', [CourseController::class, 'addCourse']);
             Route::put('/update/{course_id}', [CourseController::class, 'updateCourse']);
+            Route::get('/class/{class_id}', [CourseController::class, 'getCoursesByClassId']);
+            Route::delete('/delete/{id}', [CourseController::class, 'deleteCourse']);
+
+
             // Future protected routes can be added here
       
     });
@@ -81,12 +85,16 @@ Route::prefix('users')->group(function () {
     Route::prefix('results')->group(function () {
         Route::post('/', [ResultController::class, 'addResult']);
         Route::put('/{result_id}', [ResultController::class, 'updateResult']);
+        Route::post('/fetch', [ResultController::class, 'fetchResultByStudentAndCourse']);
+
     });
 
     // Attendance Routes
     Route::prefix('attendance')->group(function () {
         Route::post('/', [AttendanceController::class, 'markAttendance']);
         Route::get('/{student_id}', [AttendanceController::class, 'viewAttendance']);
+        Route::get('/update/{attendance_id}', [AttendanceController::class, 'updateAttendance']);
+        Route::get('/class/{class_id}', [AttendanceController::class, 'viewAttendanceByClassId']);
     });
 
     // Timetable Routes

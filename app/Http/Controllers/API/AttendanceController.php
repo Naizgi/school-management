@@ -126,6 +126,55 @@ class AttendanceController extends Controller
             return response()->json(['error' => 'Failed to mark attendance', 'message' => $e->getMessage()], 500);
         }
     }
+
+
+
+    public function updateAttendance(Request $request, $attendance_id)
+    {
+        $request->validate([
+            'reason' => 'required|string|max:255',
+        ]);
+
+        try {
+            $attendance = Attendance::findOrFail($attendance_id);
+
+            // Ensure the attendance belongs to the given student
+            if ($attendance->student_id != $request->student_id) {
+                return response()->json(['error' => 'Attendance record does not match the student.'], 400);
+            }
+
+            // Update the attendance record
+            $attendance->update([
+                'reason' => $request->reason,
+            ]);
+
+            return response()->json(['message' => 'Attendance updated successfully.'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to update attendance', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+
+
+      // ✅ VIEW ATTENDANCE by class_id
+      public function viewAttendanceByClassId($class_id)
+      {
+          try {
+              // Fetch all students in the class
+              $class = Classroom::findOrFail($class_id); // Assuming you have a Classroom model
+  
+              // Fetch attendance for all students in the class
+              $attendance = Attendance::whereIn('student_id', $class->students->pluck('id'))->get();
+  
+              if ($attendance->isEmpty()) {
+                  return response()->json(['message' => 'No attendance records found for this class.'], 404);
+              }
+  
+              return response()->json($attendance);
+          } catch (\Exception $e) {
+              return response()->json(['error' => 'Failed to retrieve attendance for the class', 'message' => $e->getMessage()], 500);
+          }
+      }
 }
 
 

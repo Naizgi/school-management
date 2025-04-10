@@ -57,4 +57,45 @@ class ResultController extends Controller
             ], 500);
         }
     }
+
+
+    // ✅ FETCH RESULT by student_id and course_id
+    public function fetchResultByStudentAndCourse(Request $request)
+    {
+        $request->validate([
+            'student_id' => 'required|integer|exists:users,id',
+            'course_id' => 'required|integer|exists:courses,id',
+        ]);
+    
+        try {
+            // Eager load student and course relationships
+            $result = Result::where('student_id', $request->student_id)
+                            ->where('course_id', $request->course_id)
+                            ->with(['student', 'course'])  // Eager load relationships
+                            ->first();
+    
+            if (!$result) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Result not found.'
+                ], 404);
+            }
+    
+            return response()->json([
+                'success' => true,
+                'data' => $result,  // This will automatically include appended attributes
+                'message' => 'Result retrieved successfully.'
+            ], 200);
+    
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch result.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    
+
 }

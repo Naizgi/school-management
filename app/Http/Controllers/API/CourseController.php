@@ -151,4 +151,61 @@ class CourseController extends Controller
     }
     
     
+    // Get courses by class ID
+public function getCoursesByClassId($class_id)
+{
+    try {
+        $courses = Course::where('class_id', $class_id)->get();
+
+        if ($courses->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No courses found for the specified class ID.',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $courses,
+            'message' => 'Courses retrieved successfully for class ID: ' . $class_id
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to retrieve courses.',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
+
+
+
+// Delete a course by ID
+public function deleteCourse($id)
+{
+    try {
+        $course = Course::findOrFail($id);
+        $course->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Course deleted successfully.'
+        ]);
+    } catch (ModelNotFoundException $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Course not found.',
+            'error' => $e->getMessage()
+        ], 404);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to delete course.',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
+
+
 }
