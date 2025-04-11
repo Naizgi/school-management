@@ -12,9 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('timeslots', function (Blueprint $table) {
-            $table->bigIncrements('id'); // Correct way to define unsigned big integer ID
-
-            $table->timestamps();
+            $table->bigIncrements('timeslot_id'); // Matches model primary key
+            $table->time('start_time');
+            $table->time('end_time');
+            $table->timestamps(); // created_at and updated_at
         });
     }
 

@@ -11,10 +11,7 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 class StudentController extends Controller
 {
     // ✅ Ensure only authenticated users can access this controller
-    public function __construct()
-    {
-        $this->middleware('jwt.auth');
-    }
+ 
 
     // ✅ GET STUDENT PROFILE (Protected)
     public function getProfile($student_id)
