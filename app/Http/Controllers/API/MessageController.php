@@ -43,20 +43,28 @@ class MessageController extends Controller
     public function viewMessages($user_id)
     {
         try {
-            // Ensure the user is viewing their own messages
+            // Ensure the user is authenticated
             $user = Auth::user();
+            if (!$user) {
+                return response()->json(['error' => 'User not authenticated'], 401);
+            }
+    
+            // Ensure the user is viewing their own messages
             if ($user->id != $user_id) {
                 return response()->json(['error' => 'Unauthorized to view these messages'], 403);
             }
-
-            // Get the messages for the authenticated user
+    
+            // Get the messages for the authenticated user and ensure created_at is not null
             $messages = Message::where('receiver_id', $user_id)
                 ->orWhere('sender_id', $user_id)
+                ->whereNotNull('created_at') // Ensure created_at is not null
                 ->get();
-
+    
             return response()->json($messages, 200);
         } catch (\Exception $e) {
+            \Log::error('Error fetching messages: ' . $e->getMessage());  // Log the error for debugging
             return response()->json(['error' => 'Failed to fetch messages', 'message' => $e->getMessage()], 500);
         }
     }
+    
 }
