@@ -13,6 +13,28 @@ class TimetableController extends Controller
     // ✅ Ensure only authenticated users access this controller
 
 
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'class_id' => 'required|exists:classes,id',
+            'course_id' => 'required|exists:courses,id',
+            'timeslot_id' => 'required|exists:timeslots,id',
+            'day_of_week' => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'is_active' => 'boolean',
+        ]);
+    
+        $timetable = Timetable::create($validated);
+    
+        return response()->json([
+            'success' => true,
+            'message' => 'Timetable created successfully',
+            'data' => $timetable
+        ]);
+    }
+
     // ✅ VIEW TIMETABLE (Protected)
     public function viewTimetable($class_id)
     {

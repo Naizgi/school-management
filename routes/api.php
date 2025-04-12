@@ -12,6 +12,7 @@ use App\Http\Controllers\API\CourseController;
 use App\Http\Controllers\API\ResultController;
 use App\Http\Controllers\API\AttendanceController;
 use App\Http\Controllers\API\TimetableController;
+use App\Http\Controllers\API\TimeSlotController;
 use App\Http\Controllers\API\EventController;
 use App\Http\Controllers\API\GalleryController;
 use App\Http\Controllers\API\NoticeController;
@@ -98,10 +99,21 @@ Route::prefix('users')->group(function () {
     });
 
     // Timetable Routes
+    Route::prefix('timeslots')->group(function () {
+        Route::post('/', [TimeSlotController::class, 'store']);         // Store new timeslot
+        Route::get('/', [TimeSlotController::class, 'index']);          // Get all timeslots
+        Route::get('/{id}', [TimeSlotController::class, 'show']);       // Show single timeslot by ID
+        Route::put('/{id}', [TimeSlotController::class, 'update']);     // Update timeslot by ID
+        Route::delete('/{id}', [TimeSlotController::class, 'destroy']); // Delete timeslot by ID
+    });
+
     Route::prefix('timetable')->group(function () {
+        Route::post('/', [TimetableController::class, 'store']);
         Route::get('/{class_id}', [TimetableController::class, 'viewTimetable']);
         Route::put('/{timetable_id}', [TimetableController::class, 'updateTimetable']);
     });
+
+
 
     // Event Routes
     Route::prefix('events')->group(function () {
@@ -113,6 +125,7 @@ Route::prefix('users')->group(function () {
     Route::prefix('gallery')->group(function () {
         Route::post('/', [GalleryController::class, 'addImage']);
         Route::get('/{event_id}', [GalleryController::class, 'viewGallery']);
+        Route::get('/latest', [GalleryController::class, 'latestImages']);
     });
 
     // Notice Routes

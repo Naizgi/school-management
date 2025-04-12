@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class TimeSlot extends Model
 {
     use HasFactory;
-
-    protected $primaryKey = 'timeslot_id';
+    protected $table = 'timeslots';
+    protected $primaryKey = 'id';
     protected $fillable = ['start_time', 'end_time'];
 }

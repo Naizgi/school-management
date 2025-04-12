@@ -11,7 +11,9 @@ class TimeTable extends Model
 {
     use HasFactory;
 
-    protected $primaryKey = 'timetable_id';
+    protected $table = 'timetables';
+
+    protected $primaryKey = 'id';
     protected $fillable = [
         'class_id',
         'day_of_week', // e.g., 'Monday', 'Tuesday'
