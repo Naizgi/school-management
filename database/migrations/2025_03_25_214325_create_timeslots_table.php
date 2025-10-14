@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('timeslots', function (Blueprint $table) {
-            $table->bigIncrements('timeslot_id'); // Matches model primary key
+            $table->bigIncrements('id'); // Matches model primary key
             $table->time('start_time');
             $table->time('end_time');
             $table->timestamps(); // created_at and updated_at

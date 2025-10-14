@@ -10,7 +10,7 @@ use Tymon\JWTAuth\Exceptions\JWTException;
 
 class AuthController extends Controller
 {
-    // User login
+    // User login - FIXED VERSION
     public function login(Request $request)
     {
         \Log::info('Attempting login with:', $request->all());
@@ -20,25 +20,44 @@ class AuthController extends Controller
             'password' => 'required|string',
         ]);
     
-        if (!$token = auth()->attempt($credentials)) {
-            \Log::error('Invalid credentials');
-            return response()->json(['error' => 'Invalid credentials'], 401);
+        // Use JWTAuth directly or specify the guard
+        try {
+            // Method 1: Using JWTAuth directly
+            if (!$token = JWTAuth::attempt($credentials)) {
+                \Log::error('Invalid credentials');
+                return response()->json(['error' => 'Invalid credentials'], 401);
+            }
+            
+            // Method 2: Using auth with guard specified
+            // if (!$token = auth('api')->attempt($credentials)) {
+            //     \Log::error('Invalid credentials');
+            //     return response()->json(['error' => 'Invalid credentials'], 401);
+            // }
+    
+            $user = auth('api')->user();
+            
+            return response()->json([
+                'message' => 'Login successful',
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'phone_number' => $user->phone_number,
+                ],
+                'token' => $token
+            ]);
+            
+        } catch (JWTException $e) {
+            \Log::error('JWT Exception: ' . $e->getMessage());
+            return response()->json(['error' => 'Could not create token'], 500);
         }
-    
-        return response()->json([
-            'message' => 'Login successful',
-            'user' => auth()->user(),
-            'token' => $token
-        ]);
     }
-    
 
-    // User registration
+    // User registration - FIXED VERSION
     public function register(Request $request)
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'phone_number' => 'required|string|unique:users', // Ensure unique phone number
+            'phone_number' => 'required|string|unique:users',
             'password' => 'required|string|min:6',
         ]);
 
@@ -51,32 +70,51 @@ class AuthController extends Controller
             'password' => bcrypt($request->password),
         ]);
 
+        // Generate token for the new user
         $token = JWTAuth::fromUser($user);
 
         return $this->respondWithToken($token, $user);
     }
 
-    // Get logged-in user
+    // Get logged-in user - FIXED VERSION
     public function me()
     {
-        $user = Auth::guard('api')->user();
-        if (!$user) {
-            return response()->json(['error' => 'User not authenticated'], 401);
+        try {
+            $user = JWTAuth::parseToken()->authenticate();
+            if (!$user) {
+                return response()->json(['error' => 'User not found'], 404);
+            }
+            return response()->json([
+                'id' => $user->id,
+                'name' => $user->name,
+                'phone_number' => $user->phone_number,
+            ]);
+        } catch (JWTException $e) {
+            return response()->json(['error' => 'Invalid token'], 401);
         }
-        return response()->json($user);
     }
 
-    // Logout user
+    // Logout user - FIXED VERSION
     public function logout()
     {
-        Auth::guard('api')->logout();
-        return response()->json(['message' => 'Successfully logged out']);
+        try {
+            JWTAuth::invalidate(JWTAuth::getToken());
+            return response()->json(['message' => 'Successfully logged out']);
+        } catch (JWTException $e) {
+            return response()->json(['error' => 'Failed to logout'], 500);
+        }
     }
 
-    // Refresh token
+    // Refresh token - FIXED VERSION
     public function refresh()
     {
-        return $this->respondWithToken(Auth::guard('api')->refresh(), Auth::guard('api')->user());
+        try {
+            $token = JWTAuth::refresh(JWTAuth::getToken());
+            $user = JWTAuth::setToken($token)->authenticate();
+            return $this->respondWithToken($token, $user);
+        } catch (JWTException $e) {
+            return response()->json(['error' => 'Token refresh failed'], 401);
+        }
     }
 
     // Helper function to return token response
@@ -85,7 +123,7 @@ class AuthController extends Controller
         return response()->json([
             'access_token' => $token,
             'token_type' => 'bearer',
-            'expires_in' => Auth::guard('api')->factory()->getTTL() * 600,
+            'expires_in' => JWTAuth::factory()->getTTL() * 60, // Fixed: was 600 which is 10 hours
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,

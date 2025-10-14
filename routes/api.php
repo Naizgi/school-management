@@ -1,5 +1,7 @@
 <?php
 
+
+
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -18,6 +20,12 @@ use App\Http\Controllers\API\GalleryController;
 use App\Http\Controllers\API\NoticeController;
 use App\Http\Controllers\API\LibraryController;
 use App\Http\Controllers\API\MessageController;
+use App\Http\Controllers\API\DashboardController;
+
+
+
+
+
 
 // 🟢 Public Routes (No authentication required)
 Route::prefix('users')->group(function () {
@@ -27,7 +35,13 @@ Route::prefix('users')->group(function () {
 
 });
 
+
+
+
 // 🔴 Protected Routes (Require JWT authentication) keseran bewhala enastekakalewalen man lelawn mokrew yaredo
+
+
+ Route::middleware('auth:api')->group(function () {
 
     // User Routes
     Route::prefix('users')->group(function () {
@@ -35,6 +49,16 @@ Route::prefix('users')->group(function () {
         Route::get('/profile', [UserController::class, 'getProfile']);
     });
  
+Route::prefix('dashboard')->group(function () {
+    Route::middleware('auth:api')->get('/summary', [DashboardController::class, 'summary']);
+
+    Route::get('/attendance-summary', [DashboardController::class, 'attendanceSummary']);
+    Route::get('/notices', [DashboardController::class, 'notices']);
+    Route::get('/events', [DashboardController::class, 'events']);
+});
+
+
+
     // Parent Routes
     Route::prefix('parents')->group(function () {
       
@@ -151,6 +175,6 @@ Route::prefix('users')->group(function () {
 
 
 
-    Route::middleware('auth:api')->group(function () {
+   
 
 });
