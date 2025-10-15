@@ -62,24 +62,24 @@ Route::prefix('dashboard')->group(function () {
     // Parent Routes
     Route::prefix('parents')->group(function () {
       
-        Route::post('/register-student', [ParentController::class, 'registerStudent']);
-        Route::post('/bulk-register-students', [ParentController::class, 'bulkRegisterStudents']);
+        Route::post('/register-student', [ParentController::class, 'registerStudent']);// yihe le single student mezgeba nw 
+        Route::post('/bulk-register-students', [ParentController::class, 'bulkRegisterStudents']);//yihe bulk new lemezgebaw
         Route::get('/students', [ParentController::class, 'getStudents']);
         Route::put('/students/{student_id}', [ParentController::class, 'updateStudentProfile']);
     });
 
     // Student Routes
     Route::prefix('students')->group(function () {
-        Route::get('/{student_id}', [StudentController::class, 'getProfile']);
-        Route::get('/student/list', [StudentController::class, 'listStudents']);
+        Route::get('/{student_id}', [StudentController::class, 'getProfile']);//single student data nw
+        Route::get('/student/list', [StudentController::class, 'listStudents']);//ye student full list nw
 
     });
 
     Route::prefix('classes')->group(function () {
         Route::get('/index', [ClassController::class, 'index']);
-        Route::get('/sections/all', [ClassController::class, 'AllSections']);
-        Route::post('/sections/bulk', [ClassController::class, 'bulkManageSections']);
-       Route::get('/class/sections/bygrade/{grade}', [ClassController::class, 'getSectionsByGrade']);
+        Route::get('/sections/all', [ClassController::class, 'AllSections']);// hulum section nw
+        Route::post('/sections/bulk', [ClassController::class, 'bulkManageSections']);//bulk section register yadergal
+       Route::get('/class/sections/bygrade/{grade}', [ClassController::class, 'getSectionsByGrade']);//grade tetekmo class yasayal
         Route::post('/store', [ClassController::class, 'store']);
         Route::get('/show/{id}', [ClassController::class, 'show']);
         Route::put('/update/{id}', [ClassController::class, 'update']);
