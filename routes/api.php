@@ -63,6 +63,7 @@ Route::prefix('dashboard')->group(function () {
     Route::prefix('parents')->group(function () {
       
         Route::post('/register-student', [ParentController::class, 'registerStudent']);
+        Route::post('/bulk-register-students', [ParentController::class, 'bulkRegisterStudents']);
         Route::get('/students', [ParentController::class, 'getStudents']);
         Route::put('/students/{student_id}', [ParentController::class, 'updateStudentProfile']);
     });
@@ -70,6 +71,8 @@ Route::prefix('dashboard')->group(function () {
     // Student Routes
     Route::prefix('students')->group(function () {
         Route::get('/{student_id}', [StudentController::class, 'getProfile']);
+        Route::get('/student/list', [StudentController::class, 'listStudents']);
+
     });
 
     Route::prefix('classes')->group(function () {

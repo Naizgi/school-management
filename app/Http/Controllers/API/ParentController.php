@@ -49,8 +49,7 @@ class ParentController extends Controller
         Log::info('Register student request', $request->all());
     
         try {
-            // Remove admin check since we're not using JWT
-            // You might want to add some other form of authentication here
+           
             
             $validatedData = $request->validate([
                 'parent_phone_number' => 'required|string|exists:users,phone_number',
@@ -96,6 +95,74 @@ class ParentController extends Controller
             );
         }
     }
+
+
+public function bulkRegisterStudents(Request $request)
+{
+    $studentsData = $request->all(); // expects an array of students
+
+    if (!is_array($studentsData)) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Invalid request format. Expected an array of students.'
+        ], 400);
+    }
+
+    $registered = [];
+    $failed = [];
+
+    foreach ($studentsData as $index => $studentData) {
+        try {
+            $validatedData = validator($studentData, [
+                'parent_phone_number' => 'required|string|exists:users,phone_number',
+                'name' => 'required|string|max:255',
+                'class_id' => 'required|integer|exists:classes,id',
+                'roll_number' => 'required|string|unique:students,roll_number',
+                'academic_year' => 'required|string|max:50',
+                'date_of_admission' => 'required|date',
+                'father_name' => 'required|string|max:255',
+                'mother_name' => 'required|string|max:255',
+                'date_of_birth' => 'required|date',
+                'address' => 'required|string|max:500',
+                'profile_picture' => 'nullable|string|url',
+            ])->validate();
+
+            $age = now()->diffInYears($validatedData['date_of_birth']);
+
+            $student = Student::create([
+                'parent_phone_number' => $validatedData['parent_phone_number'],
+                'name' => $validatedData['name'],
+                'class_id' => $validatedData['class_id'],
+                'roll_number' => $validatedData['roll_number'],
+                'academic_year' => $validatedData['academic_year'],
+                'date_of_admission' => $validatedData['date_of_admission'],
+                'father_name' => $validatedData['father_name'],
+                'mother_name' => $validatedData['mother_name'],
+                'date_of_birth' => $validatedData['date_of_birth'],
+                'age' => $age,
+                'address' => $validatedData['address'],
+                'profile_picture' => $validatedData['profile_picture'] ?? 'default-profile.png',
+            ]);
+
+            $registered[] = $student;
+        } catch (\Exception $e) {
+            $failed[] = [
+                'data' => $studentData,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+
+    return response()->json([
+        'success' => true,
+        'registered_count' => count($registered),
+        'failed_count' => count($failed),
+        'registered_students' => $registered,
+        'failed_students' => $failed
+    ], 200);
+}
+
+
 
     public function updateStudentProfile(Request $request, $student_id)
     {
