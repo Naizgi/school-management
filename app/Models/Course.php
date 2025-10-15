@@ -23,7 +23,8 @@ class Course extends Model
         'description',
         'credit_hours',
         'is_active',
-        'metadata'
+        'metadata',
+        'core'
     ];
 
     protected $casts = [

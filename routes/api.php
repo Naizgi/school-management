@@ -97,7 +97,12 @@ Route::prefix('dashboard')->group(function () {
         // Public routes (if any)
         Route::get('/viewall', [CourseController::class, 'viewCourses']);
         Route::get('/view/{id}', [CourseController::class, 'viewCourse']);
-        
+        Route::get('/list', [CourseController::class, 'listCourses']);
+        Route::post('/bulk', [CourseController::class, 'bulkManageCourses']);
+        Route::get('/by/grade/{gradeId}', [CourseController::class, 'getCoursesByGrade']);
+
+
+
         // Protected routes (require admin/instructor role)
    
             Route::post('/add', [CourseController::class, 'addCourse']);

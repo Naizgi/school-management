@@ -43,6 +43,182 @@ class CourseController extends Controller
         }
     }
 
+
+public function listCourses()
+{
+    try {
+        // Fetch all courses with their related class (to get grade)
+        $courses = \App\Models\Course::with('class:id,grade') // Load only the 'grade' column from class table
+            ->select('id', 'course_name as subject', 'course_code as code', 'credit_hours as creditHour', 'is_active as core', 'class_id')
+            ->get()
+            ->map(function ($course) {
+                return [
+                    'id' => $course->id,
+                    'subject' => $course->subject,
+                    'code' => $course->code,
+                    'creditHour' => (int)$course->creditHour,
+                    'core' => (bool)$course->core,
+                    'grade' => $course->class ? $course->class->grade : 'N/A', // Use grade from class table
+                ];
+            });
+
+        return response()->json($courses, 200);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to retrieve courses.',
+            'error' => $e->getMessage(),
+        ], 500);
+    }
+}
+
+
+
+
+public function bulkManageCourses(Request $request)
+{
+    $coursesData = $request->all();
+
+    if (!is_array($coursesData)) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Invalid request format. Expected an array of courses.'
+        ], 400);
+    }
+
+    $added = $updated = $deleted = [];
+
+    try {
+        foreach ($coursesData as $course) {
+            if (!isset($course['action'])) {
+                continue;
+            }
+
+            // Get the class_id from the grade if exists, otherwise null
+            $class = isset($course['grade']) ? \App\Models\ClassModel::where('grade', $course['grade'])->first() : null;
+
+            switch (strtolower($course['action'])) {
+                case 'add':
+                    if (!isset($course['subject'], $course['code'], $course['creditHour'])) {
+                        continue 2; // skip if essential fields missing
+                    }
+
+                    $newCourse = \App\Models\Course::create([
+                        'course_name'   => $course['subject'],
+                        'course_code'   => $course['code'],
+                        'credit_hours'  => $course['creditHour'],
+                        'is_active'     => $course['is_active'] ?? true,
+                        'class_id'      => $class?->id,  // can be null
+                        'instructor_id' => $course['instructor_id'] ?? null,
+                        'description'   => $course['description'] ?? null,
+                        'metadata'      => $course['metadata'] ?? [],
+                    ]);
+
+                    $added[] = $newCourse->id;
+                    break;
+
+                case 'edit':
+                    if (!isset($course['id'])) {
+                        continue 2;
+                    }
+
+                    $existing = \App\Models\Course::find($course['id']);
+                    if ($existing) {
+                        $existing->update([
+                            'course_name'   => $course['subject'] ?? $existing->course_name,
+                            'course_code'   => $course['code'] ?? $existing->course_code,
+                            'credit_hours'  => $course['creditHour'] ?? $existing->credit_hours,
+                            'is_active'     => $course['is_active'] ?? $existing->is_active,
+                            'class_id'      => $class?->id ?? $existing->class_id,
+                            'instructor_id' => $course['instructor_id'] ?? $existing->instructor_id,
+                            'description'   => $course['description'] ?? $existing->description,
+                            'metadata'      => $course['metadata'] ?? $existing->metadata,
+                        ]);
+
+                        $updated[] = $existing->id;
+                    }
+                    break;
+
+                case 'delete':
+                    if (!isset($course['id'])) {
+                        continue 2;
+                    }
+
+                    $deletedCourse = \App\Models\Course::find($course['id']);
+                    if ($deletedCourse) {
+                        $deletedCourse->delete();
+                        $deleted[] = $deletedCourse->id;
+                    }
+                    break;
+
+                default:
+                    continue 2;
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Courses processed successfully',
+            'summary' => [
+                'added' => $added,
+                'updated' => $updated,
+                'deleted' => $deleted,
+            ]
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to process courses.',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
+
+
+public function getCoursesByGrade($grade)
+{
+    try {
+        // Find the class by the grade string
+        $class = \App\Models\ClassModel::where('grade', $grade)->first();
+
+        if (!$class) {
+            return response()->json([
+                'success' => false,
+                'message' => 'course not found'
+            ], 404);
+        }
+
+        // Get courses for this class
+        $courses = \App\Models\Course::where('class_id', $class->id)
+            ->get(['id', 'course_name']);
+
+        // Format the response
+        $response = [
+            'grade' => $class->grade,
+            'courses' => $courses->map(function ($course) {
+                return [
+                    'id' => $course->id,
+                    'subject' => $course->course_name
+                ];
+            })
+        ];
+
+        return response()->json($response, 200);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to retrieve courses.',
+            'error' => $e->getMessage(),
+        ], 500);
+    }
+}
+
+
+    
+
     // View single course
     public function viewCourse($id)
     {
