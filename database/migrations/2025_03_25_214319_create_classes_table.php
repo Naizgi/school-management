@@ -8,12 +8,14 @@ return new class extends Migration {
     public function up()
     {
         Schema::create('classes', function (Blueprint $table) {
-            $table->id(); // Same as bigIncrements but more Laravel-idiomatic
-            $table->string('class_name');
-            $table->string('section')->nullable(); // Added for class subdivisions
+            $table->id(); // Primary key
+            $table->string('section_name'); // Renamed from class_name
             $table->string('academic_year'); // e.g. "2023-2024"
+            $table->string('grade'); // New
+            $table->integer('current_students')->default(0); // New
+            $table->string('room_number')->nullable(); // New
             $table->text('description')->nullable();
-            
+
             // Relationships
             $table->foreignId('homeroom_teacher_id')
                   ->nullable()
@@ -30,13 +32,13 @@ return new class extends Migration {
             // Metadata
             $table->integer('max_students')->default(30);
             $table->boolean('is_active')->default(true);
+
             $table->softDeletes(); // For archiving classes
             $table->timestamps();
-            
+
             // Indexes
-            $table->index('class_name');
+            $table->index('section_name');
             $table->index('academic_year');
-            $table->unique(['class_name', 'section', 'academic_year']);
         });
     }
 

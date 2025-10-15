@@ -31,7 +31,7 @@ class ClassController extends Controller
 
             // Pagination
             $perPage = $request->input('per_page', 10);
-            $classes = $query->with(['homeroomTeacher:id,name,email'])
+            $classes = $query->with(['homeroomTeacher:id,user_name,email'])
                             ->paginate($perPage);
 
             return response()->json([
@@ -48,6 +48,181 @@ class ClassController extends Controller
             ], 500);
         }
     }
+
+
+public function allSections()
+{
+    try {
+        // Fetch all classes
+        $sections = \App\Models\ClassModel::select(
+            'id',
+            'section_name',
+            'room_number',
+            'max_students',
+            'current_students',
+            'grade'
+        )->get();
+
+        // Format the data
+        $formatted = $sections->map(function($section) {
+            return [
+                'id' => $section->id,
+                'sectionName' => $section->section_name,
+                'roomNumber' => $section->room_number,
+                'capacity' => $section->max_students,
+                'currentStudents' => $section->current_students,
+                'grade' => $section->grade
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $formatted
+        ], 200);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to retrieve sections.',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
+
+
+public function bulkManageSections(Request $request)
+{
+    $sectionsData = $request->all(); // expects an array of sections with 'action' key
+
+    if (!is_array($sectionsData)) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Invalid request format. Expected an array of sections.'
+        ], 400);
+    }
+
+    try {
+        $added = [];
+        $updated = [];
+        $deleted = [];
+
+        foreach ($sectionsData as $section) {
+            if (!isset($section['action'])) {
+                continue;
+            }
+
+            switch (strtolower($section['action'])) {
+                case 'add':
+                    if (!isset($section['sectionName'], $section['roomNumber'], $section['grade'])) {
+                        continue 2;
+                    }
+
+                    $new = \App\Models\ClassModel::create([
+                        'section_name'  => $section['sectionName'],
+                        'room_number'   => $section['roomNumber'],
+                        'grade'         => $section['grade'],
+                        'max_students'  => $section['capacity'] ?? 30,
+                        'is_active'     => true,
+                        'academic_year' => $section['academicYear'] ?? now()->year . '-' . (now()->year + 1),
+                    ]);
+
+                    $added[] = $new->id;
+                    break;
+
+                case 'edit':
+                    if (!isset($section['id'], $section['sectionName'], $section['roomNumber'], $section['grade'])) {
+                        continue 2;
+                    }
+
+                    $existing = \App\Models\ClassModel::find($section['id']);
+                    if ($existing) {
+                        $existing->update([
+                            'section_name'  => $section['sectionName'],
+                            'room_number'   => $section['roomNumber'],
+                            'grade'         => $section['grade'],
+                            'max_students'  => $section['capacity'] ?? $existing->max_students,
+                            'academic_year' => $section['academicYear'] ?? $existing->academic_year,
+                        ]);
+                        $updated[] = $existing->id;
+                    }
+                    break;
+
+               case 'delete':
+                   if (!isset($section['id'])) {
+                      continue 2;
+       }
+
+                     $existing = \App\Models\ClassModel::find($section['id']);
+                   if ($existing) {
+                     $existing->delete(); // soft delete
+                     $deleted[] = $existing->id; // add to summary
+                    }
+                    break;
+
+
+                default:
+                    continue 2;
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Sections processed successfully.',
+            'summary' => [
+                'added' => $added,
+                'updated' => $updated,
+                'deleted' => $deleted
+            ]
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to process sections.',
+            'error'   => $e->getMessage(),
+        ], 500);
+    }
+}
+
+
+
+public function getSectionsByGrade($grade)
+{
+    try {
+        // Fetch all classes matching the grade
+        $sections = \App\Models\ClassModel::where('grade', $grade)
+            ->select('id', 'section_name as sectionName')
+            ->get();
+
+        if ($sections->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No sections found for the given grade.',
+                'grade' => $grade,
+                'sections' => []
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'grade' => $grade,
+            'sections' => $sections
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to fetch sections.',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
+
+
+
+
+
+
 
     /**
      * Store a newly created class.

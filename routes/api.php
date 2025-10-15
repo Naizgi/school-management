@@ -74,12 +74,15 @@ Route::prefix('dashboard')->group(function () {
 
     Route::prefix('classes')->group(function () {
         Route::get('/index', [ClassController::class, 'index']);
-    Route::post('/store', [ClassController::class, 'store']);
-    Route::get('/show/{id}', [ClassController::class, 'show']);
-    Route::put('/update/{id}', [ClassController::class, 'update']);
-    Route::delete('/destroy/{id}', [ClassController::class, 'destroy']);
-    Route::get('/{id}/statistics', [ClassController::class, 'statistics']);
-    Route::get('/{id}/students', [ClassController::class, 'students']);
+        Route::get('/sections/all', [ClassController::class, 'AllSections']);
+        Route::post('/sections/bulk', [ClassController::class, 'bulkManageSections']);
+       Route::get('/class/sections/bygrade/{grade}', [ClassController::class, 'getSectionsByGrade']);
+        Route::post('/store', [ClassController::class, 'store']);
+        Route::get('/show/{id}', [ClassController::class, 'show']);
+        Route::put('/update/{id}', [ClassController::class, 'update']);
+        Route::delete('/destroy/{id}', [ClassController::class, 'destroy']);
+        Route::get('/{id}/statistics', [ClassController::class, 'statistics']);
+        Route::get('/{id}/students', [ClassController::class, 'students']);
     });
 
     // Instructor Routes

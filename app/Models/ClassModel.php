@@ -16,19 +16,22 @@ class ClassModel extends Model
     protected $table = 'classes';
     
     protected $fillable = [
-        'class_name',
-        'section',
+        'section_name',       // renamed from class_name
         'academic_year',
         'description',
         'homeroom_teacher_id',
         'secondary_teacher_id',
         'max_students',
-        'is_active'
+        'is_active',
+        'grade',             // new
+        'current_students',  // new
+        'room_number'        // new
     ];
 
     protected $attributes = [
         'is_active' => true,
-        'max_students' => 30
+        'max_students' => 30,
+        'current_students' => 0
     ];
 
     protected $with = ['homeroomTeacher', 'secondaryTeacher'];
@@ -36,7 +39,13 @@ class ClassModel extends Model
     /**
      * Homeroom teacher relationship
      */
-  
+    public function homeroomTeacher(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'homeroom_teacher_id')
+            ->select(['id', 'user_name', 'email'])
+            ->where('role', 'instructor')
+            ->withDefault(['user_name' => 'No Teacher']);
+    }
 
     /**
      * Secondary teacher relationship
@@ -51,30 +60,22 @@ class ClassModel extends Model
     /**
      * Students in this class
      */
-  // In app/Models/ClassModel.php
+    public function students(): HasMany
+    {
+        return $this->hasMany(Student::class, 'class_id')
+            ->select(['id', 'name', 'class_id', 'roll_number']);
+    }
 
-// Students relationship (using class_id)
-public function students(): HasMany
-{
-    return $this->hasMany(Student::class, 'class_id')
-        ->select(['id', 'name', 'class_id', 'roll_number']);
-}
+    /**
+     * Courses relationship
+     */
+    public function courses(): HasMany
+    {
+        return $this->hasMany(Course::class, 'class_id')
+            ->select(['id', 'course_name', 'class_id', 'description']);
+    }
 
-// Courses relationship
-public function courses(): HasMany
-{
-    return $this->hasMany(Course::class, 'class_id')
-        ->select(['id', 'course_name', 'class_id', 'description']);
-}
-
-// Homeroom teacher relationship
-public function homeroomTeacher(): BelongsTo
-{
-    return $this->belongsTo(User::class, 'homeroom_teacher_id')
-        ->select(['id', 'user_name', 'email']) // Adjust to your User model
-        ->where('role', 'instructor')
-        ->withDefault(['username' => 'No Teacher']);
-}/**
+    /**
      * Class timetable
      */
     public function timetable(): HasOne
@@ -111,8 +112,7 @@ public function homeroomTeacher(): BelongsTo
      */
     public function scopeSearch($query, string $search)
     {
-        return $query->where('class_name', 'like', "%{$search}%")
-                    ->orWhere('section', 'like', "%{$search}%");
+        return $query->where('section_name', 'like', "%{$search}%");
     }
 
     /**
