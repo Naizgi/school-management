@@ -1,0 +1,21 @@
+deployment:
+  tasks:
+    # Go to repo
+    - cd $HOME/repositories/school-management
+
+    # Copy Laravel files to the subdomain folder
+    - /bin/cp -r * $HOME/api.mellainnovation.com/
+
+    # Move into the deployment directory
+    - cd $HOME/api.mellainnovation.com
+
+    # Install Composer dependencies
+    - /opt/cpanel/composer/bin/composer install --no-dev --optimize-autoloader
+
+    # Clear cache and config
+    - php artisan config:clear
+    - php artisan route:clear
+    - php artisan cache:clear
+
+    # Run migrations (optional)
+    - php artisan migrate --force
