@@ -1,21 +1,21 @@
+---
 deployment:
   tasks:
-    # Go to repo
-    - cd $HOME/repositories/school-management
+    # Define where to deploy (your subdomain’s document root)
+    - export DEPLOYPATH=/home/mellaite/api.mellainnovation.com/
 
-    # Copy Laravel files to the subdomain folder
-    - /bin/cp -r * $HOME/api.mellainnovation.com/
+    # Copy all project files except git
+    - /bin/cp -r * $DEPLOYPATH
 
-    # Move into the deployment directory
-    - cd $HOME/api.mellainnovation.com
+    # Run Composer install for dependencies
+    - /usr/local/bin/composer install --no-dev --optimize-autoloader
 
-    # Install Composer dependencies
-    - /opt/cpanel/composer/bin/composer install --no-dev --optimize-autoloader
+    # Set permissions
+    - /bin/chmod -R 755 $DEPLOYPATH/storage
+    - /bin/chmod -R 755 $DEPLOYPATH/bootstrap/cache
 
-    # Clear cache and config
-    - php artisan config:clear
-    - php artisan route:clear
-    - php artisan cache:clear
-
-    # Run migrations (optional)
-    - php artisan migrate --force
+    # Clear Laravel cache
+    - /usr/local/bin/php artisan config:clear
+    - /usr/local/bin/php artisan cache:clear
+    - /usr/local/bin/php artisan route:clear
+    - /usr/local/bin/php artisan view:clear

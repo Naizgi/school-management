@@ -414,6 +414,7 @@ public function getSectionsByGrade($grade)
             return response()->json([
                 'success' => true,
                 'data' => [
+                    'grade' => $class->grade,
                     'student_count' => $class->students_count,
                     'course_count' => $class->courses_count,
                     'homeroom_teacher' => $class->homeroomTeacher

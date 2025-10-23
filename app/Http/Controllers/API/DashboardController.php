@@ -91,7 +91,7 @@ class DashboardController extends Controller
 {
     try {
         $notices = Notice::orderBy('created_at', 'desc')
-            ->get(['notice_id', 'title', 'created_at'])
+            ->get(['notice_id', 'title','description', 'created_at'])
             ->map(function ($notice) {
                 return [
                     'id' => $notice->notice_id, // ✅ matches migration
@@ -126,7 +126,7 @@ class DashboardController extends Controller
     public function events()
     {
         try {
-            $events = Event::orderBy('date', 'asc')->get(['id','title','date']);
+            $events = Event::orderBy('date', 'asc')->get(['id','title','description','date']);
             
             // Return empty array with 200 status instead of 404
             if ($events->isEmpty()) {
