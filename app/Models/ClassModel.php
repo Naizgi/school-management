@@ -122,4 +122,8 @@ class ClassModel extends Model
     {
         return $query->where('is_active', true);
     }
+   public function courseAssignments(): HasMany
+{
+    return $this->hasMany(CourseAssignment::class, 'class_id');
+}
 }

@@ -47,6 +47,9 @@ Route::prefix('users')->group(function () {
     Route::prefix('users')->group(function () {
         Route::post('/logout', [UserController::class, 'logout']);
         Route::get('/profile', [UserController::class, 'getProfile']);
+        Route::put('/profile', [UserController::class, 'updateProfile']);
+        Route::post('/profile/upload-photo', [UserController::class, 'uploadProfilePicture']);
+        Route::post('/change-password', [UserController::class, 'changePassword']);
     });
  
 Route::prefix('dashboard')->group(function () {
@@ -60,20 +63,32 @@ Route::prefix('dashboard')->group(function () {
 
 
     // Parent Routes
-    Route::prefix('parents')->group(function () {
-      
-        Route::post('/register-student', [ParentController::class, 'registerStudent']);// yihe le single student mezgeba nw 
-        Route::post('/bulk-register-students', [ParentController::class, 'bulkRegisterStudents']);//yihe bulk new lemezgebaw
-        Route::get('/students', [ParentController::class, 'getStudents']);
-        Route::put('/students/{student_id}', [ParentController::class, 'updateStudentProfile']);
-    });
+   // Parent Student Management Routes
+Route::prefix('parent')->group(function () {
+    // Student Registration
+    Route::post('/register-student', [ParentController::class, 'registerStudent']); // Single student registration
+    Route::post('/bulk-register-students', [ParentController::class, 'bulkRegisterStudents']); // Bulk student registration
+    
+    // Student Management
+    Route::get('/students', [ParentController::class, 'getStudents']); // Get all students for parent
+    Route::put('/students/{student_id}', [ParentController::class, 'updateStudentProfile']); // Update student profile
+    Route::post('/students/{student_id}/upload-photo', [ParentController::class, 'uploadProfilePicture']); // Upload profile picture
+});
 
     // Student Routes
     Route::prefix('students')->group(function () {
-        Route::get('/{student_id}', [StudentController::class, 'getProfile']);//single student data nw
-        Route::get('/student/list', [StudentController::class, 'listStudents']);//ye student full list nw
+       Route::get('/students/{id}', [StudentController::class, 'getStudentDetails']); // Complete details
+       Route::get('/student/profile/{student_id}', [StudentController::class, 'getProfile']); // Basic profile
+       Route::get('/students', [StudentController::class, 'listStudents']); // List with pagination
+       Route::get('/students/search', [StudentController::class, 'searchStudents']);
+       Route::get('/students/advanced-search', [StudentController::class, 'advancedSearchStudents']);
+       Route::get('/students/suggestions', [StudentController::class, 'getSearchSuggestions']);
+       Route::get('/students/by-class-section', [StudentController::class, 'getStudentsByClassAndSection']);
+       Route::get('/students/by-grade-section', [StudentController::class, 'getStudentsByGradeAndSection']);
+       Route::get('/classes-sections', [StudentController::class, 'getAvailableClassesAndSections']);
 
-    });
+
+     });
 
     Route::prefix('classes')->group(function () {
         Route::get('/index', [ClassController::class, 'index']);
@@ -119,18 +134,30 @@ Route::prefix('dashboard')->group(function () {
     });
     // Results Routes
     Route::prefix('results')->group(function () {
-        Route::post('/', [ResultController::class, 'addResult']);
-        Route::put('/{result_id}', [ResultController::class, 'updateResult']);
-        Route::post('/fetch', [ResultController::class, 'fetchResultByStudentAndCourse']);
+        Route::post('/add', [ResultController::class, 'addResult']);
+        Route::put('/update/{result_id}', [ResultController::class, 'updateResult']);
+        Route::get('/fetch', [ResultController::class, 'fetchResultByStudentAndCourse']);
+        Route::get('/fetch-all', [ResultController::class, 'fetchAllResultsByStudentAndCourse']);
+        Route::get('/activity-types', [ResultController::class, 'getActivityTypes']);
 
     });
 
     // Attendance Routes
     Route::prefix('attendance')->group(function () {
-        Route::post('/', [AttendanceController::class, 'markAttendance']);
-        Route::get('/{student_id}', [AttendanceController::class, 'viewAttendance']);
-        Route::get('/update/{attendance_id}', [AttendanceController::class, 'updateAttendance']);
-        Route::get('/class/{class_id}', [AttendanceController::class, 'viewAttendanceByClassId']);
+           // Student-specific attendance routes
+          Route::get('/students/{student_id}/attendance', [AttendanceController::class, 'viewAttendance']);
+          Route::get('/students/{student_id}/attendance/stats', [AttendanceController::class, 'getStudentAttendanceStats']);
+          Route::get('/students/{student_id}/attendance/monthly-summary', [AttendanceController::class, 'getStudentMonthlySummary']);
+          Route::get('/students/{student_id}/attendance/calendar', [AttendanceController::class, 'getStudentAttendanceCalendar']);
+    
+    // General attendance routes
+          Route::post('/attendance', [AttendanceController::class, 'markAttendance']);
+          Route::post('/attendance/bulk', [AttendanceController::class, 'markAttendanceBulk']);
+          Route::put('/attendance/{attendance_id}', [AttendanceController::class, 'updateAttendance']);
+          Route::delete('/attendance/{attendance_id}', [AttendanceController::class, 'deleteAttendance']);
+    
+    // Class-based attendance routes (keep your existing ones)
+         Route::get('/attendance/class/{class_id}', [AttendanceController::class, 'viewAttendanceByClassId']);
     });
 
     // Timetable Routes
@@ -143,9 +170,15 @@ Route::prefix('dashboard')->group(function () {
     });
 
     Route::prefix('timetable')->group(function () {
-        Route::post('/', [TimetableController::class, 'store']);
-        Route::get('/{class_id}', [TimetableController::class, 'viewTimetable']);
-        Route::put('/{timetable_id}', [TimetableController::class, 'updateTimetable']);
+        Route::post('/timetable', [TimetableController::class, 'store']);
+        Route::post('/timetable/weekly', [TimetableController::class, 'createWeeklyTimetable']);
+        Route::get('/timetable/class/{class_id}', [TimetableController::class, 'viewTimetable']);
+        Route::get('/timetable/class/{class_id}/day/{day}', [TimetableController::class, 'viewTimetableByDay']);
+        Route::put('/timetable/{timetable_id}', [TimetableController::class, 'updateTimetable']);
+        Route::delete('/timetable/{timetable_id}', [TimetableController::class, 'destroy']);
+        Route::get('/timeslots', [TimetableController::class, 'getAvailableTimeslots']);
+        Route::post('/timetable/check-conflicts', [TimetableController::class, 'checkConflicts']);
+        Route::get('/timetable/teacher/{teacher_id}', [TimetableController::class, 'getTeacherTimetable']);
     });
 
 
@@ -154,6 +187,12 @@ Route::prefix('dashboard')->group(function () {
     Route::prefix('events')->group(function () {
         Route::post('/', [EventController::class, 'addEvent']);
         Route::get('/', [EventController::class, 'viewEvents']);
+    });
+
+    Route::prefix('activity')->group(function () {
+         Route::apiResource('activity-types', ActivityTypeController::class);
+         Route::get('activity-types/grade/{grade}', [ActivityTypeController::class, 'index']);
+         Route::get('activity-types/semester/{semester}', [ActivityTypeController::class, 'index']);
     });
 
     // Gallery Routes
@@ -183,7 +222,16 @@ Route::prefix('dashboard')->group(function () {
         Route::get('/{user_id}', [MessageController::class, 'viewMessages']);
     });
 
-
+ Route::prefix('course-assign')->group(function () {
+         Route::post('/course-assignments', [CourseAssignmentController::class, 'assignCourse']);
+         Route::post('/course-assignments/bulk', [CourseAssignmentController::class, 'bulkAssignCourses']);
+         Route::get('/course-assignments/class/{class_id}', [CourseAssignmentController::class, 'getAssignmentsByClass']);
+         Route::get('/course-assignments/instructor/{instructor_id}', [CourseAssignmentController::class, 'getInstructorAssignments']);
+         Route::get('/course-assignments/available/{class_id}', [CourseAssignmentController::class, 'getAvailableCourses']);
+         Route::put('/course-assignments/{assignment_id}', [CourseAssignmentController::class, 'updateAssignment']);
+         Route::delete('/course-assignments/{assignment_id}', [CourseAssignmentController::class, 'deleteAssignment']);
+         Route::get('/course-assignments/classes', [CourseAssignmentController::class, 'getAllClassesWithAssignments']);
+    });
 
 
    

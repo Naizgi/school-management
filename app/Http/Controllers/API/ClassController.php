@@ -415,6 +415,7 @@ public function getSectionsByGrade($grade)
                 'success' => true,
                 'data' => [
                     'grade' => $class->grade,
+                    'section_name' => $class->section,
                     'student_count' => $class->students_count,
                     'course_count' => $class->courses_count,
                     'homeroom_teacher' => $class->homeroomTeacher

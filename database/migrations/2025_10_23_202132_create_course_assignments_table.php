@@ -11,19 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Check if all required tables exist
-        if (!Schema::hasTable('users') || !Schema::hasTable('courses') || !Schema::hasTable('classes')) {
-            throw new Exception('Required tables (users, courses, classes) must exist before creating course_assignments table.');
-        }
-
+        // Drop the table if it exists (with any structure)
+        Schema::dropIfExists('course_assignments');
+        
+        // Create the table with correct structure
         Schema::create('course_assignments', function (Blueprint $table) {
             $table->id();
-            
-            // Use unsignedBigInteger for more control
             $table->unsignedBigInteger('instructor_id');
             $table->unsignedBigInteger('course_id');
-            $table->unsignedBigInteger('class_id'); // This represents both class and section
-            
+            $table->unsignedBigInteger('class_id'); // Represents class + section
             $table->string('academic_year');
             $table->string('semester')->nullable();
             $table->integer('max_students')->nullable();
@@ -31,7 +27,7 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->timestamps();
 
-            // Add foreign keys
+            // Foreign keys
             $table->foreign('instructor_id')
                   ->references('id')
                   ->on('users')
@@ -47,19 +43,13 @@ return new class extends Migration
                   ->on('classes')
                   ->onDelete('cascade');
 
-            // Unique constraint to prevent duplicate assignments
-            // Since sections are part of classes table, we only need class_id
+            // Unique constraint
             $table->unique([
                 'instructor_id', 
                 'course_id', 
                 'class_id', 
                 'academic_year'
             ], 'unique_course_assignment');
-
-            // Add indexes for better performance
-            $table->index(['class_id']);
-            $table->index(['instructor_id', 'academic_year']);
-            $table->index(['is_active']);
         });
     }
 
