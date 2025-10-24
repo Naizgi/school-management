@@ -218,8 +218,14 @@ Route::prefix('parent')->group(function () {
 
     // Message Routes
     Route::prefix('messages')->group(function () {
-        Route::post('/', [MessageController::class, 'sendMessage']);
-        Route::get('/{user_id}', [MessageController::class, 'viewMessages']);
+         Route::post('/messages/send', [MessageController::class, 'sendMessage']);
+         Route::get('/messages/chat-history', [MessageController::class, 'getChatHistory']);
+         Route::get('/messages/with-user/{user_id}', [MessageController::class, 'getMessagesWithUser']);
+         Route::post('/messages/mark-read', [MessageController::class, 'markAsRead']);
+         Route::post('/messages/mark-all-read/{user_id}', [MessageController::class, 'markAllAsReadFromUser']);
+         Route::get('/messages/unread-count', [MessageController::class, 'getUnreadCount']);
+         Route::delete('/messages/{message_id}', [MessageController::class, 'deleteMessage']);
+         Route::get('/messages/search', [MessageController::class, 'searchMessages']);
     });
 
  Route::prefix('course-assign')->group(function () {
