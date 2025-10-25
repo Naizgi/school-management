@@ -21,6 +21,9 @@ use App\Http\Controllers\API\NoticeController;
 use App\Http\Controllers\API\LibraryController;
 use App\Http\Controllers\API\MessageController;
 use App\Http\Controllers\API\DashboardController;
+use App\Http\Controllers\ActivityTypeController;
+use App\Http\Controllers\API\CourseAssignmentController;
+
 
 
 
