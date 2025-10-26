@@ -17,7 +17,7 @@ use Carbon\Carbon;
 class StudentController extends Controller
 {
     // ✅ GET COMPLETE STUDENT DETAILS BY ID
-   public function getStudentDetails($id)
+  public function getStudentDetails($id)
 {
     try {
         $student = Student::with([
@@ -28,33 +28,10 @@ class StudentController extends Controller
                       ->orderBy('date_of_absence', 'desc')
                       ->limit(30);
             },
-            'results' => function($query) {
-                // ✅ No grade or exam_date — select only valid columns
-                $query->select(
-                    'id',
-                    'student_id',
-                    'course_id',
-                    'semester',
-                    'activity_type',
-                    'title',
-                    'assessment_date',
-                    'score',
-                    'max_score',
-                    'percentage',
-                    'comments',
-                    'graded_by',
-                    'created_at',
-                    'updated_at'
-                )
-                ->with('course:id,course_name,course_code')
-                ->orderBy('assessment_date', 'desc')
-                ->limit(20);
-            }
         ])->findOrFail($id);
 
         // 📊 Load supporting stats
         $attendanceStats = $this->getAttendanceStatistics($id);
-        $academicStats = $this->getAcademicStatistics($id);
         $recentActivity = $this->getRecentActivity($id);
 
         // 🧠 Build response
@@ -72,8 +49,7 @@ class StudentController extends Controller
                 'age' => $student->date_of_birth ? Carbon::parse($student->date_of_birth)->age : 'N/A',
                 'birth_place' => $student->birth_place ?? 'N/A',
                 'address' => $student->address ?? 'N/A',
-                'nationality' => $student->nationality ?? 'N/A',
-                'religion' => $student->religion ?? 'N/A',
+              
             ],
             'parent_info' => [
                 'parent_name' => $student->parent_name ?? 'N/A',
@@ -100,34 +76,12 @@ class StudentController extends Controller
                 'current_semester' => $student->current_semester ?? '1',
             ],
             'attendance_stats' => $attendanceStats,
-            'academic_stats' => $academicStats,
             'recent_attendance' => $student->attendance->map(function ($attendance) {
                 return [
                     'date' => $attendance->date_of_absence?->format('Y-m-d'),
                     'status' => $attendance->status,
                     'reason' => $attendance->reason,
                     'subject' => $attendance->subject ?? 'General'
-                ];
-            }),
-            'recent_results' => $student->results->map(function ($result) {
-                // ✅ Compute grade dynamically
-                $percentage = $result->percentage ?? ($result->score / max($result->max_score, 1)) * 100;
-                $grade = match (true) {
-                    $percentage >= 90 => 'A',
-                    $percentage >= 80 => 'B',
-                    $percentage >= 70 => 'C',
-                    $percentage >= 60 => 'D',
-                    default => 'F',
-                };
-                return [
-                    'course_name' => $result->course?->course_name ?? 'N/A',
-                    'course_code' => $result->course?->course_code ?? 'N/A',
-                    'score' => $result->score,
-                    'max_score' => $result->max_score,
-                    'percentage' => round($percentage, 2),
-                    'grade' => $grade,
-                    'assessment_date' => $result->assessment_date?->format('Y-m-d'),
-                    'remarks' => $result->comments ?? 'N/A'
                 ];
             }),
             'recent_activity' => $recentActivity,
@@ -153,6 +107,7 @@ class StudentController extends Controller
         ], 404);
     }
 }
+
 
     // ✅ GET STUDENT PROFILE (Basic profile)
     public function getProfile($student_id)
