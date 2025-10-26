@@ -63,7 +63,7 @@ class Student extends Model
    public function results()
     {
     return $this->hasMany(Result::class, 'student_id')
-                ->select('id', 'student_id', 'course_id', 'semester', 'activity_type', 'title', 'assessment_date', 'score', 'max_score', 'percentage', 'comments', 'graded_by', 'created_at', 'updated_at');
+                ->select('result_id', 'student_id', 'course_id', 'semester', 'activity_type', 'title', 'assessment_date', 'score', 'max_score', 'percentage', 'comments', 'graded_by', 'created_at', 'updated_at');
     }
 
 
