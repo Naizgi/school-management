@@ -303,7 +303,7 @@ class TimetableController extends Controller
     public function getAvailableTimeslots()
     {
         try {
-            $timeslots = Timeslot::where('is_active', true)
+            $timeslots = TimeSlot::where('is_active', true)
                 ->orderBy('start_time')
                 ->get(['id', 'name', 'start_time', 'end_time', 'duration']);
 
