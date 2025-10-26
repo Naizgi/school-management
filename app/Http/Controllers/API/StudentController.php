@@ -25,9 +25,6 @@ class StudentController extends Controller
             'class.homeroomTeacher:id,user_name,email,phone',
         ])->findOrFail($id);
 
-        // 📊 Load supporting stats
-        $recentActivity = $this->getRecentActivity($id);
-
         // 🧠 Build response
         $studentDetails = [
             'personal_info' => [
@@ -43,7 +40,6 @@ class StudentController extends Controller
                 'age' => $student->date_of_birth ? Carbon::parse($student->date_of_birth)->age : 'N/A',
                 'birth_place' => $student->birth_place ?? 'N/A',
                 'address' => $student->address ?? 'N/A',
-               
             ],
             'parent_info' => [
                 'parent_name' => $student->parent_name ?? 'N/A',
@@ -69,7 +65,6 @@ class StudentController extends Controller
                 'status' => $student->status ?? 'Active',
                 'current_semester' => $student->current_semester ?? '1',
             ],
-            'recent_activity' => $recentActivity,
             'metadata' => $student->metadata ?? [],
             'system_info' => [
                 'created_at' => $student->created_at?->format('Y-m-d H:i:s'),
