@@ -18,112 +18,122 @@ class StudentController extends Controller
 {
     // ✅ GET COMPLETE STUDENT DETAILS BY ID
     public function getStudentDetails($id)
-    {
-        try {
-            $student = Student::with([
-                'class:id,grade,section_name,homeroom_teacher_id,room_number',
-                'class.homeroomTeacher:id,user_name,email,phone',
-                'attendance' => function($query) {
-                    $query->orderBy('date_of_absence', 'desc')->limit(30);
-                },
-                'results' => function($query) {
-                    $query->with('course:id,course_name,course_code')
-                          ->orderBy('created_at', 'desc')
-                          ->limit(20);
-                }
-            ])->findOrFail($id);
+{
+    try {
+        $student = Student::with([
+            'class:id,grade,section_name,homeroom_teacher_id,room_number',
+            'class.homeroomTeacher:id,user_name,email,phone',
+            'attendance' => function($query) {
+                $query->orderBy('date_of_absence', 'desc')->limit(30);
+            },
+            'results' => function($query) {
+                $query->with('course:id,course_name,course_code')
+                      ->orderBy('assessment_date', 'desc') // ✅ correct column
+                      ->limit(20);
+            }
+        ])->findOrFail($id);
 
-            // Calculate additional statistics
-            $attendanceStats = $this->getAttendanceStatistics($id);
-            $academicStats = $this->getAcademicStatistics($id);
-            $recentActivity = $this->getRecentActivity($id);
+        // Calculate additional statistics
+        $attendanceStats = $this->getAttendanceStatistics($id);
+        $academicStats = $this->getAcademicStatistics($id);
+        $recentActivity = $this->getRecentActivity($id);
 
-            // Transform the student data with complete details
-            $studentDetails = [
-                'personal_info' => [
-                    'id' => $student->id,
-                    'student_id' => $student->student_id ?? $student->id,
-                    'name' => $student->name,
-                    'first_name' => $student->name ? explode(' ', $student->name)[0] : 'N/A',
-                    'last_name' => $student->name ? substr($student->name, strpos($student->name, ' ') + 1) : 'N/A',
-                    'email' => $student->email ?? 'N/A',
-                    'phone' => $student->phone ?? 'N/A',
-                    'gender' => $student->gender ?? 'N/A',
-                    'date_of_birth' => $student->date_of_birth?->format('Y-m-d') ?? 'N/A',
-                    'age' => $student->date_of_birth ? Carbon::parse($student->date_of_birth)->age : 'N/A',
-                    'birth_place' => $student->birth_place ?? 'N/A',
-                    'address' => $student->address ?? 'N/A',
-                    'nationality' => $student->nationality ?? 'N/A',
-                    'religion' => $student->religion ?? 'N/A',
+        // Transform the student data with complete details
+        $studentDetails = [
+            'personal_info' => [
+                'id' => $student->id,
+                'student_id' => $student->student_id ?? $student->id,
+                'name' => $student->name,
+                'first_name' => $student->name ? explode(' ', $student->name)[0] : 'N/A',
+                'last_name' => $student->name ? substr($student->name, strpos($student->name, ' ') + 1) : 'N/A',
+                'email' => $student->email ?? 'N/A',
+                'phone' => $student->phone ?? 'N/A',
+                'gender' => $student->gender ?? 'N/A',
+                'date_of_birth' => $student->date_of_birth?->format('Y-m-d') ?? 'N/A',
+                'age' => $student->date_of_birth ? Carbon::parse($student->date_of_birth)->age : 'N/A',
+                'birth_place' => $student->birth_place ?? 'N/A',
+                'address' => $student->address ?? 'N/A',
+                'nationality' => $student->nationality ?? 'N/A',
+                'religion' => $student->religion ?? 'N/A',
+            ],
+            'parent_info' => [
+                'parent_name' => $student->parent_name ?? 'N/A',
+                'parent_phone' => $student->parent_phone ?? 'N/A',
+                'parent_email' => $student->parent_email ?? 'N/A',
+                'parent_occupation' => $student->parent_occupation ?? 'N/A',
+                'emergency_contact' => $student->emergency_contact ?? 'N/A',
+                'emergency_phone' => $student->emergency_phone ?? 'N/A',
+            ],
+            'academic_info' => [
+                'class' => [
+                    'id' => $student->class?->id,
+                    'grade' => $student->class?->grade ?? 'N/A',
+                    'section' => $student->class?->section_name ?? 'N/A',
+                    'room_number' => $student->class?->room_number ?? 'N/A',
+                    'homeroom_teacher' => $student->class?->homeroomTeacher?->user_name ?? 'Not Assigned',
+                    'teacher_email' => $student->class?->homeroomTeacher?->email ?? 'N/A',
+                    'teacher_phone' => $student->class?->homeroomTeacher?->phone ?? 'N/A',
                 ],
-                'parent_info' => [
-                    'parent_name' => $student->parent_name ?? 'N/A',
-                    'parent_phone' => $student->parent_phone ?? 'N/A',
-                    'parent_email' => $student->parent_email ?? 'N/A',
-                    'parent_occupation' => $student->parent_occupation ?? 'N/A',
-                    'emergency_contact' => $student->emergency_contact ?? 'N/A',
-                    'emergency_phone' => $student->emergency_phone ?? 'N/A',
-                ],
-                'academic_info' => [
-                    'class' => [
-                        'id' => $student->class?->id,
-                        'grade' => $student->class?->grade ?? 'N/A',
-                        'section' => $student->class?->section_name ?? 'N/A',
-                        'room_number' => $student->class?->room_number ?? 'N/A',
-                        'homeroom_teacher' => $student->class?->homeroomTeacher?->user_name ?? 'Not Assigned',
-                        'teacher_email' => $student->class?->homeroomTeacher?->email ?? 'N/A',
-                        'teacher_phone' => $student->class?->homeroomTeacher?->phone ?? 'N/A',
-                    ],
-                    'admission_date' => $student->admission_date?->format('Y-m-d') ?? 'N/A',
-                    'admission_number' => $student->admission_number ?? 'N/A',
-                    'roll_number' => $student->roll_number ?? 'N/A',
-                    'status' => $student->status ?? 'Active',
-                    'current_semester' => $student->current_semester ?? '1',
-                ],
-                'attendance_stats' => $attendanceStats,
-                'academic_stats' => $academicStats,
-                'recent_attendance' => $student->attendance->map(function ($attendance) {
-                    return [
-                        'date' => $attendance->date_of_absence?->format('Y-m-d'),
-                        'status' => $attendance->status,
-                        'reason' => $attendance->reason,
-                        'subject' => $attendance->subject ?? 'General'
-                    ];
-                }),
-                'recent_results' => $student->results->map(function ($result) {
-                    return [
-                        'course_name' => $result->course?->course_name ?? 'N/A',
-                        'course_code' => $result->course?->course_code ?? 'N/A',
-                        'score' => $result->score,
-                        'grade' => $result->grade,
-                        'exam_type' => $result->exam_type ?? 'Regular',
-                        'exam_date' => $result->exam_date?->format('Y-m-d'),
-                        'remarks' => $result->remarks
-                    ];
-                }),
-                'recent_activity' => $recentActivity,
-                'metadata' => $student->metadata ?? [],
-                'system_info' => [
-                    'created_at' => $student->created_at?->format('Y-m-d H:i:s'),
-                    'updated_at' => $student->updated_at?->format('Y-m-d H:i:s'),
-                    'last_login' => $student->last_login?->format('Y-m-d H:i:s') ?? 'Never',
-                ]
-            ];
+                'admission_date' => $student->admission_date?->format('Y-m-d') ?? 'N/A',
+                'admission_number' => $student->admission_number ?? 'N/A',
+                'roll_number' => $student->roll_number ?? 'N/A',
+                'status' => $student->status ?? 'Active',
+                'current_semester' => $student->current_semester ?? '1',
+            ],
+            'attendance_stats' => $attendanceStats,
+            'academic_stats' => $academicStats,
+            'recent_attendance' => $student->attendance->map(function ($attendance) {
+                return [
+                    'date' => $attendance->date_of_absence?->format('Y-m-d'),
+                    'status' => $attendance->status,
+                    'reason' => $attendance->reason,
+                    'subject' => $attendance->subject ?? 'General'
+                ];
+            }),
+            'recent_results' => $student->results->map(function ($result) {
+                // ✅ Fixed columns: assessment_date instead of exam_date, calculate grade manually
+                $percentage = $result->percentage ?? ($result->score / max($result->max_score, 1)) * 100;
+                $grade = match (true) {
+                    $percentage >= 90 => 'A',
+                    $percentage >= 80 => 'B',
+                    $percentage >= 70 => 'C',
+                    $percentage >= 60 => 'D',
+                    default => 'F',
+                };
+                return [
+                    'course_name' => $result->course?->course_name ?? 'N/A',
+                    'course_code' => $result->course?->course_code ?? 'N/A',
+                    'score' => $result->score,
+                    'max_score' => $result->max_score,
+                    'percentage' => round($percentage, 2),
+                    'grade' => $grade,
+                    'assessment_date' => $result->assessment_date?->format('Y-m-d'),
+                    'remarks' => $result->comments ?? 'N/A'
+                ];
+            }),
+            'recent_activity' => $recentActivity,
+            'metadata' => $student->metadata ?? [],
+            'system_info' => [
+                'created_at' => $student->created_at?->format('Y-m-d H:i:s'),
+                'updated_at' => $student->updated_at?->format('Y-m-d H:i:s'),
+                'last_login' => $student->last_login?->format('Y-m-d H:i:s') ?? 'Never',
+            ]
+        ];
 
-            return response()->json([
-                'success' => true,
-                'data' => $studentDetails,
-                'message' => 'Student details retrieved successfully.'
-            ], 200);
+        return response()->json([
+            'success' => true,
+            'data' => $studentDetails,
+            'message' => 'Student details retrieved successfully.'
+        ], 200);
 
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Student not found.',
-                'error' => $e->getMessage()
-            ], 404);
-        }
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Student not found.',
+            'error' => $e->getMessage()
+        ], 404);
     }
+}
 
     // ✅ GET STUDENT PROFILE (Basic profile)
     public function getProfile($student_id)

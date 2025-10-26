@@ -244,6 +244,12 @@ class Student extends Model
         ];
     }
 
+    public function attendance()
+{
+    return $this->hasMany(Attendance::class);
+}
+
+
     /**
      * Boot method for model events
      */

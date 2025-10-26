@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\TimeTable;
 use App\Models\ClassModel;
 use App\Models\Course;
-use App\Models\Timeslot;
+use App\Models\TimeSlot;
 use Illuminate\Support\Facades\Auth;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Facades\DB;
