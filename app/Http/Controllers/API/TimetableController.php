@@ -56,83 +56,63 @@ class TimetableController extends Controller
     // ✅ BULK CREATE WEEKLY TIMETABLE
    public function createWeeklyTimetable(Request $request)
 {
+    // Validate request
     $validated = $request->validate([
         'class_id' => 'required|exists:classes,id',
+        'start_date' => 'nullable|date',
+        'end_date' => 'nullable|date|after_or_equal:start_date',
+        'is_active' => 'required|boolean',
         'timetable_entries' => 'required|array|min:1',
         'timetable_entries.*.course_id' => 'required|exists:courses,id',
         'timetable_entries.*.timeslot_id' => 'required|exists:timeslots,id',
         'timetable_entries.*.day_of_week' => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
-        'start_date' => 'nullable|date',
-        'end_date' => 'nullable|date|after_or_equal:start_date',
-        'is_active' => 'boolean', // Remove the invalid "|true"
     ]);
 
-    DB::beginTransaction();
+    $timetableEntries = [];
+    $skippedEntries = [];
 
-    try {
-        $createdEntries = [];
-        $conflicts = [];
+    foreach ($validated['timetable_entries'] as $entry) {
+        // Check for existing entry to prevent duplicates
+        $exists = \App\Models\TimeTable::where('class_id', $validated['class_id'])
+            ->where('day_of_week', $entry['day_of_week'])
+            ->where('timeslot_id', $entry['timeslot_id'])
+            ->exists();
 
-        $isActive = $validated['is_active'] ?? true;
-
-        foreach ($validated['timetable_entries'] as $entry) {
-            // Check for conflicts
-            $conflict = TimeTable::where('class_id', $validated['class_id'])
-                ->where('timeslot_id', $entry['timeslot_id'])
-                ->where('day_of_week', $entry['day_of_week'])
-                ->where('is_active', true)
-                ->first();
-
-            if ($conflict) {
-                $conflicts[] = [
-                    'requested_entry' => $entry,
-                    'conflicting_with' => $conflict
-                ];
-                continue;
-            }
-
-            // Create timetable entry
-            $timetableEntry = TimeTable::create([
-                'class_id' => $validated['class_id'],
-                'course_id' => $entry['course_id'],
-                'timeslot_id' => $entry['timeslot_id'],
-                'day_of_week' => $entry['day_of_week'],
-                'start_date' => $validated['start_date'] ?? null,
-                'end_date' => $validated['end_date'] ?? null,
-                'is_active' => $isActive,
-            ]);
-
-            $createdEntries[] = $timetableEntry;
+        if ($exists) {
+            $skippedEntries[] = $entry;
+            continue;
         }
 
-        DB::commit();
+        $timetableEntries[] = [
+            'class_id' => $validated['class_id'],
+            'course_id' => $entry['course_id'],
+            'timeslot_id' => $entry['timeslot_id'],
+            'day_of_week' => $entry['day_of_week'],
+            'start_date' => $validated['start_date'] ?? null,
+            'end_date' => $validated['end_date'] ?? null,
+            'is_active' => $validated['is_active'],
+            'created_at' => now(),
+            'updated_at' => now(),
+        ];
+    }
 
-        if (empty($createdEntries)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No timetable entries were created due to conflicts.',
-                'conflicts' => $conflicts
-            ], 409);
-        }
+    if (count($timetableEntries) > 0) {
+        // Insert new entries into DB
+        \App\Models\TimeTable::insert($timetableEntries);
 
         return response()->json([
             'success' => true,
             'message' => 'Weekly timetable created successfully',
-            'created_entries' => $createdEntries,
-            'conflicts' => $conflicts,
-            'summary' => [
-                'created' => count($createdEntries),
-                'conflicts' => count($conflicts)
-            ]
+            'inserted_count' => count($timetableEntries),
+            'skipped_count' => count($skippedEntries),
+            'skipped_entries' => $skippedEntries
         ], 201);
-
-    } catch (\Exception $e) {
-        DB::rollBack();
+    } else {
         return response()->json([
             'success' => false,
-            'message' => 'Failed to create weekly timetable',
-            'error' => $e->getMessage()
-        ], 500);
+            'message' => 'All entries already exist, nothing to insert',
+            'skipped_entries' => $skippedEntries
+        ], 400);
     }
 }
 
