@@ -1,0 +1,21 @@
+---
+deployment:
+  tasks:
+    # Define where to deploy (your subdomain’s document root)
+    - export DEPLOYPATH=/home/mellaite/api.mellainnovation.com/
+
+    # Copy all project files except git
+    - /bin/cp -r * $DEPLOYPATH
+
+    # Run Composer install for dependencies
+    - /usr/local/bin/composer install --no-dev --optimize-autoloader
+
+    # Set permissions
+    - /bin/chmod -R 755 $DEPLOYPATH/storage
+    - /bin/chmod -R 755 $DEPLOYPATH/bootstrap/cache
+
+    # Clear Laravel cache
+    - /usr/local/bin/php artisan config:clear
+    - /usr/local/bin/php artisan cache:clear
+    - /usr/local/bin/php artisan route:clear
+    - /usr/local/bin/php artisan view:clear
