@@ -70,14 +70,14 @@ class InstructorController extends Controller
 public function listInstructors(Request $request)
 {
     try {
-        $perPage = $request->input('per_page', 20); // Default 20 per page
+        $perPage = $request->input('per_page', 20);
         $page = $request->input('page', 1);
-        $search = $request->input('search'); // Optional search by name, email, phone
-        $isActive = $request->input('is_active'); // Optional filter: 1 or 0
+        $search = $request->input('search');
+        $isActive = $request->input('is_active');
 
         $query = Instructor::query();
 
-        // Optional search filter
+        // 🔎 Optional search filter
         if (!empty($search)) {
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
@@ -87,7 +87,7 @@ public function listInstructors(Request $request)
             });
         }
 
-        // Optional active status filter
+        // 🔎 Optional active status filter
         if (!is_null($isActive)) {
             $query->where('is_active', $isActive);
         }
@@ -95,8 +95,8 @@ public function listInstructors(Request $request)
         $instructors = $query->orderBy('name')
             ->paginate($perPage, ['*'], 'page', $page);
 
-        // Transform the data
-        $transformed = $instructors->map(function ($instructor) {
+        // ✅ Correct transformation
+        $transformed = $instructors->getCollection()->map(function ($instructor) {
             return [
                 'id' => $instructor->id,
                 'user_id' => $instructor->user_id,
@@ -106,15 +106,18 @@ public function listInstructors(Request $request)
                 'phone' => $instructor->phone ?? 'N/A',
                 'specialization' => $instructor->specialization ?? 'N/A',
                 'is_active' => $instructor->is_active,
-                'hire_date' => $instructor->hire_date?->format('Y-m-d') ?? 'N/A',
-                'created_at' => $instructor->created_at?->format('Y-m-d H:i:s'),
-                'updated_at' => $instructor->updated_at?->format('Y-m-d H:i:s'),
+                'hire_date' => $instructor->hire_date ? $instructor->hire_date->format('Y-m-d') : 'N/A',
+                'created_at' => $instructor->created_at ? $instructor->created_at->format('Y-m-d H:i:s') : null,
+                'updated_at' => $instructor->updated_at ? $instructor->updated_at->format('Y-m-d H:i:s') : null,
             ];
         });
 
+        // ✅ Replace original collection with transformed one
+        $instructors->setCollection($transformed);
+
         return response()->json([
             'success' => true,
-            'data' => $transformed,
+            'data' => $instructors->items(),
             'pagination' => [
                 'current_page' => $instructors->currentPage(),
                 'last_page' => $instructors->lastPage(),
@@ -134,6 +137,7 @@ public function listInstructors(Request $request)
         ], 500);
     }
 }
+
 
 
 }
