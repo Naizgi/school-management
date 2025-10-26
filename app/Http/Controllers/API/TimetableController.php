@@ -54,77 +54,82 @@ class TimetableController extends Controller
     }
 
     // ✅ BULK CREATE WEEKLY TIMETABLE
-    public function createWeeklyTimetable(Request $request)
-    {
-        $validated = $request->validate([
-            'class_id' => 'required|exists:classes,id',
-            'timetable_entries' => 'required|array|min:1',
-            'timetable_entries.*.course_id' => 'required|exists:courses,id',
-            'timetable_entries.*.timeslot_id' => 'required|exists:timeslots,id',
-            'timetable_entries.*.day_of_week' => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
-            'is_active' => 'boolean|true',
-        ]);
+   // ✅ BULK CREATE WEEKLY TIMETABLE
+public function createWeeklyTimetable(Request $request)
+{
+    $validated = $request->validate([
+        'class_id' => 'required|exists:classes,id',
+        'timetable_entries' => 'required|array|min:1',
+        'timetable_entries.*.course_id' => 'required|exists:courses,id',
+        'timetable_entries.*.timeslot_id' => 'required|exists:timeslots,id',
+        'timetable_entries.*.day_of_week' => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
+        'start_date' => 'nullable|date',
+        'end_date' => 'nullable|date|after_or_equal:start_date',
+        'is_active' => 'boolean', // ✅ removed the invalid |true
+    ]);
 
-        DB::beginTransaction();
+    // Default to true if not provided
+    $isActive = $validated['is_active'] ?? true;
 
-        try {
-            $createdEntries = [];
-            $conflicts = [];
+    DB::beginTransaction();
 
-            foreach ($validated['timetable_entries'] as $entry) {
-                // Check for conflicts
-                $conflict = TimeTable::where('class_id', $validated['class_id'])
-                    ->where('timeslot_id', $entry['timeslot_id'])
-                    ->where('day_of_week', $entry['day_of_week'])
-                    ->where('is_active', true)
-                    ->first();
+    try {
+        $createdEntries = [];
+        $conflicts = [];
 
-                if ($conflict) {
-                    $conflicts[] = [
-                        'requested_entry' => $entry,
-                        'conflicting_with' => $conflict
-                    ];
-                    continue;
-                }
+        foreach ($validated['timetable_entries'] as $entry) {
+            // Check for conflicts
+            $conflict = TimeTable::where('class_id', $validated['class_id'])
+                ->where('timeslot_id', $entry['timeslot_id'])
+                ->where('day_of_week', $entry['day_of_week'])
+                ->where('is_active', true)
+                ->first();
 
-                // Create timetable entry
-                $timetableEntry = TimeTable::create([
-                    'class_id' => $validated['class_id'],
-                    'course_id' => $entry['course_id'],
-                    'timeslot_id' => $entry['timeslot_id'],
-                    'day_of_week' => $entry['day_of_week'],
-                    'start_date' => $validated['start_date'] ?? null,
-                    'end_date' => $validated['end_date'] ?? null,
-                    'is_active' => $validated['is_active'] ?? true,
-                ]);
-
-                $createdEntries[] = $timetableEntry;
+            if ($conflict) {
+                $conflicts[] = [
+                    'requested_entry' => $entry,
+                    'conflicting_with' => $conflict
+                ];
+                continue;
             }
 
-            DB::commit();
+            // Create timetable entry
+            $timetableEntry = TimeTable::create([
+                'class_id' => $validated['class_id'],
+                'course_id' => $entry['course_id'],
+                'timeslot_id' => $entry['timeslot_id'],
+                'day_of_week' => $entry['day_of_week'],
+                'start_date' => $validated['start_date'] ?? null,
+                'end_date' => $validated['end_date'] ?? null,
+                'is_active' => $isActive,
+            ]);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Weekly timetable created successfully',
-                'created_entries' => $createdEntries,
-                'conflicts' => $conflicts,
-                'summary' => [
-                    'created' => count($createdEntries),
-                    'conflicts' => count($conflicts)
-                ]
-            ], 201);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to create weekly timetable',
-                'error' => $e->getMessage()
-            ], 500);
+            $createdEntries[] = $timetableEntry;
         }
+
+        DB::commit();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Weekly timetable created successfully',
+            'created_entries' => $createdEntries,
+            'conflicts' => $conflicts,
+            'summary' => [
+                'created' => count($createdEntries),
+                'conflicts' => count($conflicts)
+            ]
+        ], 201);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to create weekly timetable',
+            'error' => $e->getMessage()
+        ], 500);
     }
+}
+
 
     // ✅ VIEW TIMETABLE BY CLASS ID
     public function viewTimetable($class_id)
