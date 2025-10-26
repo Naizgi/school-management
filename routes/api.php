@@ -82,7 +82,7 @@ Route::prefix('parent')->group(function () {
     Route::prefix('students')->group(function () {
        Route::get('/students/{id}', [StudentController::class, 'getStudentDetails']); // Complete details
        Route::get('/student/profile/{student_id}', [StudentController::class, 'getProfile']); // Basic profile
-       Route::get('/students/list', [StudentController::class, 'listStudents']); // List with pagination
+       Route::get('/student/list', [StudentController::class, 'listStudents']); // List with pagination
        Route::get('/students/search', [StudentController::class, 'searchStudents']);
        Route::get('/students/advanced-search', [StudentController::class, 'advancedSearchStudents']);
        Route::get('/students/suggestions', [StudentController::class, 'getSearchSuggestions']);
