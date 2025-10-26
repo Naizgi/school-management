@@ -23,15 +23,9 @@ class StudentController extends Controller
         $student = Student::with([
             'class:id,grade,section_name,homeroom_teacher_id,room_number',
             'class.homeroomTeacher:id,user_name,email,phone',
-            'attendance' => function($query) {
-                $query->select('id', 'student_id', 'date_of_absence', 'status', 'reason', 'subject')
-                      ->orderBy('date_of_absence', 'desc')
-                      ->limit(30);
-            },
         ])->findOrFail($id);
 
         // 📊 Load supporting stats
-        $attendanceStats = $this->getAttendanceStatistics($id);
         $recentActivity = $this->getRecentActivity($id);
 
         // 🧠 Build response
@@ -49,7 +43,7 @@ class StudentController extends Controller
                 'age' => $student->date_of_birth ? Carbon::parse($student->date_of_birth)->age : 'N/A',
                 'birth_place' => $student->birth_place ?? 'N/A',
                 'address' => $student->address ?? 'N/A',
-              
+               
             ],
             'parent_info' => [
                 'parent_name' => $student->parent_name ?? 'N/A',
@@ -75,15 +69,6 @@ class StudentController extends Controller
                 'status' => $student->status ?? 'Active',
                 'current_semester' => $student->current_semester ?? '1',
             ],
-            'attendance_stats' => $attendanceStats,
-            'recent_attendance' => $student->attendance->map(function ($attendance) {
-                return [
-                    'date' => $attendance->date_of_absence?->format('Y-m-d'),
-                    'status' => $attendance->status,
-                    'reason' => $attendance->reason,
-                    'subject' => $attendance->subject ?? 'General'
-                ];
-            }),
             'recent_activity' => $recentActivity,
             'metadata' => $student->metadata ?? [],
             'system_info' => [
