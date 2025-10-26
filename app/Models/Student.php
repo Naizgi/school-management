@@ -60,10 +60,12 @@ class Student extends Model
     /**
      * Relationship with Results
      */
-    public function results(): HasMany
+   public function results()
     {
-        return $this->hasMany(Result::class, 'student_id');
+    return $this->hasMany(Result::class, 'student_id')
+                ->select('id', 'student_id', 'course_id', 'semester', 'activity_type', 'title', 'assessment_date', 'score', 'max_score', 'percentage', 'comments', 'graded_by', 'created_at', 'updated_at');
     }
+
 
     /**
      * Relationship with Attendance
