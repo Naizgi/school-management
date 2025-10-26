@@ -111,6 +111,7 @@ Route::prefix('parent')->group(function () {
         Route::get('/classes', [InstructorController::class, 'getClasses']);
         Route::post('/communicate', [InstructorController::class, 'communicateWithParents']);
         Route::post('/attendance', [InstructorController::class, 'markAttendance']);
+        Route::get('/instructors', [InstructorController::class, 'listInstructors']);
     });
 
     // Course Routes
