@@ -54,8 +54,7 @@ class TimetableController extends Controller
     }
 
     // ✅ BULK CREATE WEEKLY TIMETABLE
-   // ✅ BULK CREATE WEEKLY TIMETABLE
-public function createWeeklyTimetable(Request $request)
+   public function createWeeklyTimetable(Request $request)
 {
     $validated = $request->validate([
         'class_id' => 'required|exists:classes,id',
@@ -65,17 +64,15 @@ public function createWeeklyTimetable(Request $request)
         'timetable_entries.*.day_of_week' => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
         'start_date' => 'nullable|date',
         'end_date' => 'nullable|date|after_or_equal:start_date',
-        'is_active' => 'boolean', // ✅ removed the invalid |true
+        'is_active' => 'nullable|boolean', // fixed validation
     ]);
-
-    // Default to true if not provided
-    $isActive = $validated['is_active'] ?? true;
 
     DB::beginTransaction();
 
     try {
         $createdEntries = [];
         $conflicts = [];
+        $isActive = $validated['is_active'] ?? true;
 
         foreach ($validated['timetable_entries'] as $entry) {
             // Check for conflicts
@@ -111,7 +108,9 @@ public function createWeeklyTimetable(Request $request)
 
         return response()->json([
             'success' => true,
-            'message' => 'Weekly timetable created successfully',
+            'message' => count($createdEntries) > 0 
+                ? 'Weekly timetable created successfully' 
+                : 'No timetable entries were created due to conflicts',
             'created_entries' => $createdEntries,
             'conflicts' => $conflicts,
             'summary' => [
