@@ -17,28 +17,47 @@ use Carbon\Carbon;
 class StudentController extends Controller
 {
     // ✅ GET COMPLETE STUDENT DETAILS BY ID
-    public function getStudentDetails($id)
+   public function getStudentDetails($id)
 {
     try {
         $student = Student::with([
             'class:id,grade,section_name,homeroom_teacher_id,room_number',
             'class.homeroomTeacher:id,user_name,email,phone',
             'attendance' => function($query) {
-                $query->orderBy('date_of_absence', 'desc')->limit(30);
+                $query->select('id', 'student_id', 'date_of_absence', 'status', 'reason', 'subject')
+                      ->orderBy('date_of_absence', 'desc')
+                      ->limit(30);
             },
             'results' => function($query) {
-                $query->with('course:id,course_name,course_code')
-                      ->orderBy('assessment_date', 'desc') // ✅ correct column
-                      ->limit(20);
+                // ✅ No grade or exam_date — select only valid columns
+                $query->select(
+                    'id',
+                    'student_id',
+                    'course_id',
+                    'semester',
+                    'activity_type',
+                    'title',
+                    'assessment_date',
+                    'score',
+                    'max_score',
+                    'percentage',
+                    'comments',
+                    'graded_by',
+                    'created_at',
+                    'updated_at'
+                )
+                ->with('course:id,course_name,course_code')
+                ->orderBy('assessment_date', 'desc')
+                ->limit(20);
             }
         ])->findOrFail($id);
 
-        // Calculate additional statistics
+        // 📊 Load supporting stats
         $attendanceStats = $this->getAttendanceStatistics($id);
         $academicStats = $this->getAcademicStatistics($id);
         $recentActivity = $this->getRecentActivity($id);
 
-        // Transform the student data with complete details
+        // 🧠 Build response
         $studentDetails = [
             'personal_info' => [
                 'id' => $student->id,
@@ -91,7 +110,7 @@ class StudentController extends Controller
                 ];
             }),
             'recent_results' => $student->results->map(function ($result) {
-                // ✅ Fixed columns: assessment_date instead of exam_date, calculate grade manually
+                // ✅ Compute grade dynamically
                 $percentage = $result->percentage ?? ($result->score / max($result->max_score, 1)) * 100;
                 $grade = match (true) {
                     $percentage >= 90 => 'A',
