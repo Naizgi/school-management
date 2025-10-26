@@ -64,7 +64,7 @@ class TimetableController extends Controller
         'timetable_entries.*.day_of_week' => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
         'start_date' => 'nullable|date',
         'end_date' => 'nullable|date|after_or_equal:start_date',
-        'is_active' => 'nullable|boolean', // fixed validation
+        'is_active' => 'boolean', // Remove the invalid "|true"
     ]);
 
     DB::beginTransaction();
@@ -72,6 +72,7 @@ class TimetableController extends Controller
     try {
         $createdEntries = [];
         $conflicts = [];
+
         $isActive = $validated['is_active'] ?? true;
 
         foreach ($validated['timetable_entries'] as $entry) {
@@ -106,11 +107,17 @@ class TimetableController extends Controller
 
         DB::commit();
 
+        if (empty($createdEntries)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No timetable entries were created due to conflicts.',
+                'conflicts' => $conflicts
+            ], 409);
+        }
+
         return response()->json([
             'success' => true,
-            'message' => count($createdEntries) > 0 
-                ? 'Weekly timetable created successfully' 
-                : 'No timetable entries were created due to conflicts',
+            'message' => 'Weekly timetable created successfully',
             'created_entries' => $createdEntries,
             'conflicts' => $conflicts,
             'summary' => [
